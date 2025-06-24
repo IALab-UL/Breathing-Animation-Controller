@@ -107,35 +107,114 @@ h1 {
     transform: translateY(0);
 }
 
-.presets {
+/* Controles Biométricos */
+.biometric-controls {
     background: rgba(255, 255, 255, 0.95);
-    padding: 20px;
+    padding: 25px;
     border-radius: 15px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    margin-top: 20px;
 }
 
-.presets h3 {
+.biometric-controls h3 {
     margin-top: 0;
     color: #555;
     font-size: 1.3em;
+    margin-bottom: 20px;
 }
 
-.presets button {
-    margin: 5px;
-    padding: 10px 15px;
-    border: 2px solid #667eea;
-    border-radius: 20px;
-    background: white;
-    color: #667eea;
+.biometric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.biometric-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.biometric-group label {
     font-weight: bold;
+    color: #555;
+    font-size: 1em;
+    text-align: center;
+}
+
+.biometric-group select {
+    width: 100%;
+    max-width: 150px;
+    padding: 8px 12px;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    font-size: 1em;
+    background: white;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.presets button:hover {
-    background: #667eea;
+.biometric-group select:focus {
+    outline: none;
+    border-color: #764ba2;
+    box-shadow: 0 0 10px rgba(118, 75, 162, 0.3);
+}
+
+.biometric-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.biometric-actions button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
     color: white;
-    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    background: linear-gradient(45deg, #fd7e14, #ffc107);
+}
+
+.biometric-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.biometric-actions button:active {
+    transform: translateY(0);
+}
+
+.biometric-display {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.biometric-info {
+    text-align: center;
+}
+
+.biometric-info p {
+    margin: 5px 0;
+    color: #555;
+    font-size: 0.95em;
+}
+
+.biometric-info strong {
+    color: #333;
 }
 
 /* Responsivo */
@@ -162,9 +241,18 @@ h1 {
         justify-content: center;
     }
     
-    .presets button {
-        margin: 3px;
-        padding: 8px 12px;
-        font-size: 0.9em;
+    .biometric-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .biometric-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .biometric-actions button {
+        width: 100%;
+        max-width: 250px;
     }
 }

@@ -33,7 +33,8 @@ Este controlador carga un JSON de Lottie con dos capas (`Breathe in` y `Breathe 
 - 🔄 **Ciclo automático** entre inhalación y exhalación
 - ⏱️ **Duraciones configurables** para cada fase
 - 🎛️ **Controles intuitivos** (iniciar, detener, pausar, reanudar)
-- 🎨 **Presets predefinidos** para diferentes técnicas de respiración
+- 🧬 **Sistema biométrico inteligente** con 135 patrones únicos de respiración
+- 🎲 **Configuración automática** basada en 4 indicadores (RH, IBI, HRV, Estrés)
 - 📱 **Interfaz responsive** y moderna
 - 🧩 **API simple** y fácil de integrar
 
@@ -44,7 +45,7 @@ Este controlador carga un JSON de Lottie con dos capas (`Breathe in` y `Breathe 
 | 📄 **index.html** | Página demo con contenedor de animación y controles de duración |
 | 🎨 **styles.css** | Estilos modernos con gradientes y efectos visuales |
 | 🎬 **respiracion.json** | Animación Lottie exportada desde After Effects |
-| 🎛️ **interface.js** | Lógica de interfaz de usuario (inputs, botones, presets) |
+| 🎛️ **interface.js** | Lógica de interfaz de usuario (controles básicos + biométricos) |
 | ⚙️ **script.js** | Implementación principal del módulo `BreathingController` |
 
 ## ⚡ Instalación
@@ -89,12 +90,48 @@ En `index.html` se inicializa el controlador automáticamente al cargar la pági
     <button id="resumeBtn">Reanudar</button>
   </div>
 </div>
-<div class="presets">
-  <h3>Presets:</h3>
-  <button onclick="setPreset(4, 4)">Relajación (4s/4s)</button>
-  <button onclick="setPreset(4, 6)">Calma (4s/6s)</button>
-  <button onclick="setPreset(6, 6)">Equilibrio (6s/6s)</button>
-  <button onclick="setPreset(3, 3)">Energía (3s/3s)</button>
+<div class="biometric-controls">
+  <h3>Configuración Biométrica Automática</h3>
+  <div class="biometric-grid">
+    <div class="biometric-group">
+      <label for="rhSelect">Ritmo Cardíaco:</label>
+      <select id="rhSelect">
+        <option value="1">Bajo</option>
+        <option value="2" selected>Normal</option>
+        <option value="3">Alto</option>
+      </select>
+    </div>
+    <div class="biometric-group">
+      <label for="ibiSelect">Intervalo Entre Latidos:</label>
+      <select id="ibiSelect">
+        <option value="1">Corto</option>
+        <option value="2" selected>Normal</option>
+        <option value="3">Largo</option>
+      </select>
+    </div>
+    <div class="biometric-group">
+      <label for="hrvSelect">Variabilidad (HRV):</label>
+      <select id="hrvSelect">
+        <option value="1">Baja</option>
+        <option value="2" selected>Normal</option>
+        <option value="3">Alta</option>
+      </select>
+    </div>
+    <div class="biometric-group">
+      <label for="stressSelect">Nivel de Estrés:</label>
+      <select id="stressSelect">
+        <option value="1">Muy Bajo</option>
+        <option value="2">Bajo</option>
+        <option value="3" selected>Normal</option>
+        <option value="4">Alto</option>
+        <option value="5">Muy Alto</option>
+      </select>
+    </div>
+  </div>
+  <div class="biometric-actions">
+    <button id="randomBiometricBtn">Configuración Aleatoria</button>
+  </div>
+  <div id="biometricDisplay" class="biometric-display"></div>
 </div>
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.10.2/lottie.min.js"></script>
@@ -152,21 +189,74 @@ const controller = new BreathingController({
 |--------|------------|-------------|---------|
 | `setInhaleDuration(seconds)` | `number` | 📥 Asigna duración de inhalación | `controller.setInhaleDuration(4.0)` |
 | `setExhaleDuration(seconds)` | `number` | 📤 Asigna duración de exhalación | `controller.setExhaleDuration(6.0)` |
+| `updateBiometrics(rh, ibi, hrv, stress)` | `number, number, number, number` | 🧬 Actualiza indicadores biométricos y aplica configuración automática | `controller.updateBiometrics(2, 1, 3, 4)` |
+| `getCurrentConfiguration()` | - | 📊 Obtiene la configuración biométrica actual | `controller.getCurrentConfiguration()` |
+| `getAllConfigurations()` | - | 📋 Obtiene todas las 135 configuraciones posibles | `controller.getAllConfigurations()` |
+
+## 🧬 Sistema Biométrico Inteligente
+
+### 📊 Indicadores Biométricos
+
+El sistema utiliza 4 indicadores para generar automáticamente **135 patrones únicos** de respiración:
+
+| Indicador | Niveles | Descripción |
+|-----------|---------|-------------|
+| **RH** (Ritmo Cardíaco) | 1-3 | Bajo, Normal, Alto |
+| **IBI** (Intervalo Entre Latidos) | 1-3 | Corto, Normal, Largo |
+| **HRV** (Variabilidad del Ritmo Cardíaco) | 1-3 | Baja, Normal, Alta |
+| **Estrés** | 1-5 | Muy Bajo, Bajo, Normal, Alto, Muy Alto |
+
+### 🎯 Algoritmo de Cálculo
+
+El algoritmo comienza con un patrón base de 4.0s inhalación / 4.0s exhalación y aplica modificaciones según cada indicador:
+
+#### Ritmo Cardíaco (RH):
+- **Bajo (1)**: Necesita activación → Inhalación +0.5s, Exhalación -0.3s
+- **Normal (2)**: Mantener equilibrio → Sin cambios
+- **Alto (3)**: Necesita calma → Inhalación -0.3s, Exhalación +0.8s
+
+#### Intervalo Entre Latidos (IBI):
+- **Corto (1)**: Ritmo acelerado → Inhalación -0.2s, Exhalación +0.5s
+- **Normal (2)**: Sin cambios
+- **Largo (3)**: Ritmo lento → Inhalación +0.3s, Exhalación -0.2s
+
+#### Variabilidad HRV:
+- **Baja (1)**: Necesita regulación → Variación aleatoria para estimular
+- **Normal (2)**: Sin cambios
+- **Alta (3)**: Mantener variabilidad → Ambos +0.2s
+
+#### Nivel de Estrés (Factor más importante):
+- **Muy Bajo (1)**: Respiración energizante → Inhalación +0.3s, Exhalación -0.5s
+- **Bajo (2)**: Ligeramente activadora → Inhalación +0.1s, Exhalación -0.2s
+- **Normal (3)**: Respiración equilibrada → Sin cambios
+- **Alto (4)**: Respiración calmante → Inhalación -0.5s, Exhalación +1.0s
+- **Muy Alto (5)**: Muy calmante → Inhalación -0.8s, Exhalación +1.5s
+
+### 🛡️ Límites de Seguridad
+
+- **Inhalación**: Entre 1.5s y 8.0s
+- **Exhalación**: Entre 1.5s y 10.0s
+- **Precisión**: Valores redondeados a 1 decimal
+
+### 💡 Ejemplos de Patrones
+
+| Configuración | Resultado | Tipo de Respiración |
+|---------------|-----------|-------------------|
+| RH:Alto, IBI:Corto, HRV:Normal, Estrés:Muy Alto | 2.7s / 6.8s | Ultra-calmante |
+| RH:Bajo, IBI:Largo, HRV:Alta, Estrés:Muy Bajo | 5.3s / 3.2s | Energizante |
+| RH:Normal, IBI:Normal, HRV:Normal, Estrés:Normal | 4.0s / 4.0s | Equilibrada |
 
 ### 🎯 Función auxiliar (interface.js)
 
 ```js
-// 🎛️ Cambia rápidamente las duraciones usando presets
-setPreset(inhaleSeconds, exhaleSeconds)
+// 🎲 Genera configuración aleatoria para explorar patrones
+generateRandomBiometrics()
 ```
 
-**Ejemplos de uso:**
-```js
-setPreset(4, 4);  // Respiración equilibrada
-setPreset(4, 6);  // Respiración calmante  
-setPreset(6, 6);  // Respiración profunda
-setPreset(3, 3);  // Respiración energizante
-```
+**Uso:**
+- Los selectores se actualizan **automáticamente** al cambiar cualquier valor
+- El botón "Configuración Aleatoria" permite explorar diferentes combinaciones
+- El display muestra la configuración actual aplicada
 
 ## 🎨 Personalización
 
@@ -175,23 +265,25 @@ setPreset(3, 3);  // Respiración energizante
 - ✅ **Valida y controla** los valores de los inputs antes de cambiarlos
 - 🎯 **Agrega callbacks** a `animation.addEventListener('complete', ...)` en tu propia lógica si necesitas eventos personalizados
 - 🏷️ **Utiliza marcadores** en After Effects para definir segmentos con nombres diferentes, siempre que actualices los nombres en `extractSegments()`
+- 🧬 **Personaliza el algoritmo biométrico** modificando `calculateBreathingPattern()` para agregar nuevos indicadores o lógicas
 
-### 🎭 Técnicas de respiración soportadas
+### 🎭 Principios de Respiración Terapéutica
 
-| Técnica | Inhalación | Exhalación | Beneficios |
-|---------|------------|------------|------------|
-| 🧘 **Relajación** | 4s | 4s | Reduce estrés y ansiedad |
-| 😌 **Calma** | 4s | 6s | Promueve relajación profunda |
-| ⚖️ **Equilibrio** | 6s | 6s | Mejora concentración |
-| ⚡ **Energía** | 3s | 3s | Aumenta la vitalidad |
+| Patrón | Efecto | Aplicación |
+|--------|--------|------------|
+| 🔋 **Inhalación larga + Exhalación corta** | Activación | Energizar, estimular sistema simpático |
+| 😌 **Inhalación corta + Exhalación larga** | Relajación | Calmar, activar sistema parasimpático |
+| ⚖️ **Duración equilibrada** | Balance | Concentración y estabilidad |
 
 ### 🎨 Personalización visual
 
 El archivo `styles.css` incluye:
 - 🌈 Gradientes modernos
-- 💫 Efectos de sombra
+- 💫 Efectos de sombra  
 - 📱 Diseño responsive
 - 🎯 Interfaz centrada y limpia
+- 🧬 Controles biométricos con grid layout
+- 🎲 Botones con efectos hover y transiciones
 
 ## 📄 Licencia
 

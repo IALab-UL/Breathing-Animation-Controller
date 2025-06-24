@@ -33,13 +33,55 @@
             </div>
         </div>
         
-        <div class="presets">
-            <h3>Presets:</h3>
-            <button onclick="setPreset(4, 4)">Relajación (4s/4s)</button>
-            <button onclick="setPreset(4, 6)">Calma (4s/6s)</button>
-            <button onclick="setPreset(6, 6)">Equilibrio (6s/6s)</button>
-            <button onclick="setPreset(3, 3)">Energía (3s/3s)</button>
-        </div>    </div>
+        <div class="biometric-controls">
+            <h3>Configuración Biométrica Automática</h3>
+            <div class="biometric-grid">
+                <div class="biometric-group">
+                    <label for="rhSelect">Ritmo Cardíaco:</label>
+                    <select id="rhSelect">
+                        <option value="1">Bajo</option>
+                        <option value="2" selected>Normal</option>
+                        <option value="3">Alto</option>
+                    </select>
+                </div>
+                
+                <div class="biometric-group">
+                    <label for="ibiSelect">Intervalo Entre Latidos:</label>
+                    <select id="ibiSelect">
+                        <option value="1">Corto</option>
+                        <option value="2" selected>Normal</option>
+                        <option value="3">Largo</option>
+                    </select>
+                </div>
+                
+                <div class="biometric-group">
+                    <label for="hrvSelect">Variabilidad (HRV):</label>
+                    <select id="hrvSelect">
+                        <option value="1">Baja</option>
+                        <option value="2" selected>Normal</option>
+                        <option value="3">Alta</option>
+                    </select>
+                </div>
+                
+                <div class="biometric-group">
+                    <label for="stressSelect">Nivel de Estrés:</label>
+                    <select id="stressSelect">
+                        <option value="1">Muy Bajo</option>
+                        <option value="2">Bajo</option>
+                        <option value="3" selected>Normal</option>
+                        <option value="4">Alto</option>
+                        <option value="5">Muy Alto</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="biometric-actions">
+                <button id="randomBiometricBtn">Configuración Aleatoria</button>
+            </div>
+            
+            <div id="biometricDisplay" class="biometric-display"></div>
+        </div>
+    </div>
     
     <script src="script.js"></script>
     <script src="interface.js"></script>
