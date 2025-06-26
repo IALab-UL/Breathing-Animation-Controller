@@ -7,13 +7,15 @@ class BreathingController {
         this.config = {
             container: config.container || 'lottie',
             animationPath: config.animationPath || 'respiracion.json',
-            inhaleInput: config.inhaleInput || 'inhaleInput',
-            exhaleInput: config.exhaleInput || 'exhaleInput',
-            defaultInhaleDuration: config.defaultInhaleDuration || 2.63,
-            defaultExhaleDuration: config.defaultExhaleDuration || 2.37,
+            defaultInhaleDuration: config.defaultInhaleDuration || 4.0,
+            defaultExhaleDuration: config.defaultExhaleDuration || 4.0,
             renderer: config.renderer || 'svg',
             autoStart: config.autoStart !== false
         };
+
+        // Duraciones internas controladas por el sistema biométrico
+        this.currentInhaleDuration = this.config.defaultInhaleDuration;
+        this.currentExhaleDuration = this.config.defaultExhaleDuration;
 
         this.animation = null;
         this.segments = {};
@@ -24,10 +26,8 @@ class BreathingController {
         // Sistema de configuración automática basado en indicadores biométricos
         this.biometricConfig = this.initializeBiometricConfig();
         this.currentBiometrics = {
-            rh: 2,      // Ritmo Cardíaco (1-3)
-            ibi: 2,     // Intervalo Entre Latidos (1-3)
-            hrv: 2,     // Variabilidad del Ritmo Cardíaco (1-3)
-            stress: 3   // Estrés (1-5)
+            rmssd: 2,   // RMSSD (1-3: Bajo, Normal, Alto)
+            stress: 3   // Estrés (1-5: Muy Bajo, Bajo, Normal, Alto, Muy Alto)
         };
 
         if (this.config.autoStart) {
@@ -88,18 +88,8 @@ class BreathingController {
     }
 
     setupControls() {
-        const inhaleInput = document.getElementById(this.config.inhaleInput);
-        const exhaleInput = document.getElementById(this.config.exhaleInput);
-
-        if (inhaleInput) {
-            inhaleInput.value = this.config.defaultInhaleDuration;
-            inhaleInput.addEventListener('change', () => this.updateTiming());
-        }
-
-        if (exhaleInput) {
-            exhaleInput.value = this.config.defaultExhaleDuration;
-            exhaleInput.addEventListener('change', () => this.updateTiming());
-        }
+        // Ya no hay controles HTML - el sistema es completamente automático
+        // Los valores se controlan internamente via updateBiometrics()
     }
 
     playPhase(phase) {
@@ -119,17 +109,11 @@ class BreathingController {
     }
 
     getPhaseDuration(phase) {
-        const inhaleInput = document.getElementById(this.config.inhaleInput);
-        const exhaleInput = document.getElementById(this.config.exhaleInput);
-
+        // Usar valores internos en lugar de inputs HTML
         if (phase === 'inhale') {
-            return inhaleInput
-                ? parseFloat(inhaleInput.value)
-                : this.config.defaultInhaleDuration;
+            return this.currentInhaleDuration;
         } else {
-            return exhaleInput
-                ? parseFloat(exhaleInput.value)
-                : this.config.defaultExhaleDuration;
+            return this.currentExhaleDuration;
         }
     }
 
@@ -182,40 +166,26 @@ class BreathingController {
 
     // Métodos públicos para configuración dinámica
     setInhaleDuration(seconds) {
-        const input = document.getElementById(this.config.inhaleInput);
-
-        if (input) {
-            input.value = seconds;
-        }
+        this.currentInhaleDuration = parseFloat(seconds);
     }
 
     setExhaleDuration(seconds) {
-        const input = document.getElementById(this.config.exhaleInput);
-
-        if (input) {
-            input.value = seconds;
-        }
+        this.currentExhaleDuration = parseFloat(seconds);
     }
 
     /**
      * Inicializa la configuración automática basada en indicadores biométricos
-     * RH: 1=Bajo, 2=Normal, 3=Alto
-     * IBI: 1=Corto, 2=Normal, 3=Largo
-     * HRV: 1=Baja, 2=Normal, 3=Alta
+     * RMSSD: 1=Bajo, 2=Normal, 3=Alto
      * Estrés: 1=Muy Bajo, 2=Bajo, 3=Normal, 4=Alto, 5=Muy Alto
      */
     initializeBiometricConfig() {
         const config = {};
         
-        // Recorremos todas las combinaciones posibles (3×3×3×5 = 135)
-        for (let rh = 1; rh <= 3; rh++) {
-            for (let ibi = 1; ibi <= 3; ibi++) {
-                for (let hrv = 1; hrv <= 3; hrv++) {
-                    for (let stress = 1; stress <= 5; stress++) {
-                        const key = `${rh}-${ibi}-${hrv}-${stress}`;
-                        config[key] = this.calculateBreathingPattern(rh, ibi, hrv, stress);
-                    }
-                }
+        // Recorremos todas las combinaciones posibles (3×5 = 15)
+        for (let rmssd = 1; rmssd <= 3; rmssd++) {
+            for (let stress = 1; stress <= 5; stress++) {
+                const key = `${rmssd}-${stress}`;
+                config[key] = this.calculateBreathingPattern(rmssd, stress);
             }
         }
         
@@ -224,119 +194,191 @@ class BreathingController {
 
     /**
      * Calcula el patrón de respiración óptimo basado en los indicadores
+     * Basado en protocolos clínicos para estrés y RMSSD
+     * 
+     * 📌 Notas clave sobre las acciones del protocolo:
+     * - Activar protocolo: El avatar inicia respiración guiada (4-6 segundos) por 3 minutos
+     * - Continuar protocolo: Se repite el bloque de respiración porque la recuperación aún no es completa
+     * - No activar: No se hace nada en esta revisión
+     * - Esperar y reevaluar: Se vuelve a revisar en 3 minutos antes de intervenir
+     * - Monitorear: No se activa protocolo, pero el sistema puede aumentar frecuencia de chequeo
      */
-    calculateBreathingPattern(rh, ibi, hrv, stress) {
-        // Algoritmo de cálculo basado en principios de respiración terapéutica
-        let inhale = 4.0; // Base de inhalación
-        let exhale = 4.0; // Base de exhalación
+    calculateBreathingPattern(rmssd, stress) {
+        // Clasificación RMSSD según literatura clínica
+        const getRMSSDCategory = (rmssd) => {
+            if (rmssd === 1) return 'critical'; // < 30 ms
+            if (rmssd === 2) return 'tolerable'; // 30-50 ms  
+            return 'normal'; // > 50 ms
+        };
+
+        const rmssdCategory = getRMSSDCategory(rmssd);
         
-        // Ajuste basado en Ritmo Cardíaco
-        switch (rh) {
-            case 1: // Bajo - necesita activación
-                inhale += 0.5;
-                exhale -= 0.3;
-                break;
-            case 2: // Normal - mantener equilibrio
-                // Sin cambios
-                break;
-            case 3: // Alto - necesita calma
-                inhale -= 0.3;
-                exhale += 0.8;
-                break;
-        }
-        
-        // Ajuste basado en IBI (Intervalo Entre Latidos)
-        switch (ibi) {
-            case 1: // Corto - ritmo acelerado
-                inhale -= 0.2;
-                exhale += 0.5;
-                break;
-            case 2: // Normal
-                // Sin cambios
-                break;
-            case 3: // Largo - ritmo lento
-                inhale += 0.3;
-                exhale -= 0.2;
-                break;
-        }
-        
-        // Ajuste basado en HRV (Variabilidad del Ritmo Cardíaco)
-        switch (hrv) {
-            case 1: // Baja - necesita regulación
-                const ratio = Math.random() > 0.5 ? 1.2 : 0.8;
-                inhale *= ratio;
-                exhale *= (2 - ratio);
-                break;
-            case 2: // Normal
-                // Sin cambios
-                break;
-            case 3: // Alta - mantener variabilidad
-                inhale += 0.2;
-                exhale += 0.2;
-                break;
-        }
-        
-        // Ajuste basado en Nivel de Estrés (factor más importante)
+        // Variables de resultado
+        let inhale = 4.0;
+        let exhale = 4.0;
+        let shouldActivate = false;
+        let action = 'monitor';
+        let description = '';
+
         switch (stress) {
-            case 1: // Muy Bajo - respiración energizante
-                inhale += 0.3;
-                exhale -= 0.5;
+            case 5: // Estrés muy alto
+                if (rmssdCategory === 'critical') {
+                    // ACTIVAR PROTOCOLO - Crisis simpática
+                    shouldActivate = true;
+                    action = 'activate_protocol';
+                    inhale = 4.0;
+                    exhale = 6.0;
+                    description = 'CRÍTICO: Estrés muy alto + RMSSD crítico - Activar protocolo respiración 3 min';
+                } else if (rmssdCategory === 'tolerable') {
+                    // ACTIVAR PROTOCOLO - Prevenir colapso
+                    shouldActivate = true;
+                    action = 'activate_protocol';
+                    inhale = 4.5;
+                    exhale = 5.5;
+                    description = 'PREVENTIVO: Estrés muy alto + RMSSD tolerable - Activar protocolo respiración 3 min';
+                } else {
+                    // ESPERAR Y REEVALUAR - Perfil resiliente
+                    shouldActivate = false;
+                    action = 'wait_reevaluate';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'ESPERAR: Estrés muy alto + RMSSD normal - Reevaluar en 3 min';
+                }
                 break;
-            case 2: // Bajo - respiración ligeramente activadora
-                inhale += 0.1;
-                exhale -= 0.2;
+
+            case 4: // Estrés alto
+                if (rmssdCategory === 'critical') {
+                    // ACTIVAR PROTOCOLO - Disfunción vagal
+                    shouldActivate = true;
+                    action = 'activate_protocol';
+                    inhale = 4.0;
+                    exhale = 6.0;
+                    description = 'ACTIVAR: Estrés alto + RMSSD crítico - Activar protocolo respiración 3 min';
+                } else if (rmssdCategory === 'tolerable') {
+                    // ACTIVAR PROTOCOLO - Proteger reserva
+                    shouldActivate = true;
+                    action = 'activate_protocol';
+                    inhale = 4.5;
+                    exhale = 5.0;
+                    description = 'PREVENTIVO: Estrés alto + RMSSD tolerable - Activar protocolo respiración 3 min';
+                } else {
+                    // MONITOREAR - Capacidad de afrontamiento
+                    shouldActivate = false;
+                    action = 'monitor';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'MONITOREAR: Estrés alto + RMSSD normal - Aumentar frecuencia chequeo';
+                }
                 break;
-            case 3: // Normal - respiración equilibrada
-                // Sin cambios
+
+            case 3: // Estrés neutro
+                if (rmssdCategory === 'critical') {
+                    // ACTIVAR PROTOCOLO - Disfunción autonómica
+                    shouldActivate = true;
+                    action = 'activate_protocol';
+                    inhale = 4.5;
+                    exhale = 5.5;
+                    description = 'ACTIVAR: Estrés neutro + RMSSD crítico - Activar protocolo respiración 3 min';
+                } else if (rmssdCategory === 'tolerable') {
+                    // ESPERAR Y REEVALUAR
+                    shouldActivate = false;
+                    action = 'wait_reevaluate';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'ESPERAR: Estrés neutro + RMSSD tolerable - Reevaluar en 3 min';
+                } else {
+                    // NO ACTIVAR - Equilibrio
+                    shouldActivate = false;
+                    action = 'no_action';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'EQUILIBRIO: Estrés neutro + RMSSD normal - No hacer nada';
+                }
                 break;
-            case 4: // Alto - respiración calmante
-                inhale -= 0.5;
-                exhale += 1.0;
+
+            case 2: // Estrés bajo
+                if (rmssdCategory === 'critical') {
+                    // CONTINUAR PROTOCOLO - Recuperación incompleta
+                    shouldActivate = true;
+                    action = 'continue_protocol';
+                    inhale = 4.5;
+                    exhale = 5.0;
+                    description = 'CONTINUAR: Estrés bajo + RMSSD crítico - Repetir bloque respiración';
+                } else if (rmssdCategory === 'tolerable') {
+                    // MONITOREAR - Vigilar recuperación
+                    shouldActivate = false;
+                    action = 'monitor';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'MONITOREAR: Estrés bajo + RMSSD tolerable - Aumentar frecuencia chequeo';
+                } else {
+                    // NO ACTIVAR - Homeostasis óptima
+                    shouldActivate = false;
+                    action = 'no_action';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'ÓPTIMO: Estrés bajo + RMSSD normal - No hacer nada';
+                }
                 break;
-            case 5: // Muy Alto - respiración muy calmante
-                inhale -= 0.8;
-                exhale += 1.5;
+
+            case 1: // Máxima relajación
+                if (rmssdCategory === 'critical') {
+                    // MONITOREAR - Posibles artefactos, no activar
+                    shouldActivate = false;
+                    action = 'monitor';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'VERIFICAR: Máxima relajación + RMSSD crítico - Monitorear artefactos';
+                } else {
+                    // NO ACTIVAR - Perfil saludable
+                    shouldActivate = false;
+                    action = 'no_action';
+                    inhale = 4.0;
+                    exhale = 4.0;
+                    description = 'SALUDABLE: Máxima relajación + RMSSD bueno - No hacer nada';
+                }
                 break;
         }
-        
-        // Asegurar valores mínimos y máximos seguros
-        inhale = Math.max(1.5, Math.min(8.0, inhale));
-        exhale = Math.max(1.5, Math.min(10.0, exhale));
-        
-        // Redondear a un decimal
+
+        // Asegurar que los valores de activación respeten el rango 4-6 segundos
+        if (shouldActivate) {
+            inhale = Math.max(4.0, Math.min(6.0, inhale));
+            exhale = Math.max(4.0, Math.min(6.0, exhale));
+        }
+
         return {
             inhale: Math.round(inhale * 10) / 10,
             exhale: Math.round(exhale * 10) / 10,
-            description: this.getPatternDescription(rh, ibi, hrv, stress)
+            description: description,
+            shouldActivate: shouldActivate,
+            action: action
         };
     }
 
     /**
      * Genera descripción del patrón de respiración
      */
-    getPatternDescription(rh, ibi, hrv, stress) {
-        const rhLabels = ['', 'Bajo', 'Normal', 'Alto'];
-        const ibiLabels = ['', 'Corto', 'Normal', 'Largo'];
-        const hrvLabels = ['', 'Baja', 'Normal', 'Alta'];
-        const stressLabels = ['', 'Muy Bajo', 'Bajo', 'Normal', 'Alto', 'Muy Alto'];
+    getPatternDescription(rmssd, stress) {
+        const rmssdLabels = ['', 'Crítico (<30ms)', 'Tolerable (30-50ms)', 'Normal (>50ms)'];
+        const stressLabels = ['', 'Máxima Relajación', 'Bajo', 'Neutro', 'Alto', 'Muy Alto'];
         
-        return `RH:${rhLabels[rh]} | IBI:${ibiLabels[ibi]} | HRV:${hrvLabels[hrv]} | Estrés:${stressLabels[stress]}`;
+        return `RMSSD: ${rmssdLabels[rmssd]} | Estrés: ${stressLabels[stress]}`;
     }
 
     /**
      * Actualiza los indicadores biométricos y reconfigura la respiración
      */
-    updateBiometrics(rh, ibi, hrv, stress) {
+    updateBiometrics(rmssd, stress) {
         // Validar rangos
-        if (rh < 1 || rh > 3 || ibi < 1 || ibi > 3 || hrv < 1 || hrv > 3 || stress < 1 || stress > 5) {
+        if (rmssd < 1 || rmssd > 3 || stress < 1 || stress > 5) {
             console.error('Valores de indicadores fuera de rango');
             return false;
         }
         
-        this.currentBiometrics = { rh, ibi, hrv, stress };
+        this.currentBiometrics = { rmssd, stress };
         
         // Obtener configuración automática
-        const key = `${rh}-${ibi}-${hrv}-${stress}`;
+        const key = `${rmssd}-${stress}`;
         const pattern = this.biometricConfig[key];
         
         if (pattern) {
@@ -362,10 +404,23 @@ class BreathingController {
     updateBiometricDisplay(pattern) {
         const display = document.getElementById('biometricDisplay');
         if (display) {
+            const actionColors = {
+                'activate_protocol': '#dc3545',    // Rojo - Activar protocolo
+                'continue_protocol': '#fd7e14',    // Naranja - Continuar protocolo  
+                'wait_reevaluate': '#6f42c1',      // Púrpura - Esperar y reevaluar
+                'monitor': '#17a2b8',              // Azul - Monitorear
+                'no_action': '#28a745'             // Verde - No activar
+            };
+
+            const actionColor = actionColors[pattern.action] || '#6c757d';
+
             display.innerHTML = `
                 <div class="biometric-info">
-                    <p><strong>Patrón:</strong> ${pattern.description}</p>
+                    <div class="clinical-header" style="border-left: 4px solid ${actionColor}; padding-left: 10px; margin-bottom: 10px;">
+                        <p style="margin: 0; font-weight: bold; color: ${actionColor};">${pattern.description}</p>
+                    </div>
                     <p><strong>Configuración:</strong> ${pattern.inhale}s inhalación / ${pattern.exhale}s exhalación</p>
+                    <p><strong>Acción recomendada:</strong> ${pattern.shouldActivate ? 'Activar protocolo' : 'Monitorear/Esperar'}</p>
                 </div>
             `;
         }
@@ -382,8 +437,8 @@ class BreathingController {
      * Obtiene la configuración actual
      */
     getCurrentConfiguration() {
-        const { rh, ibi, hrv, stress } = this.currentBiometrics;
-        const key = `${rh}-${ibi}-${hrv}-${stress}`;
+        const { rmssd, stress } = this.currentBiometrics;
+        const key = `${rmssd}-${stress}`;
         return this.biometricConfig[key];
     }
 }

@@ -14,61 +14,24 @@
             <div id="lottie"></div>
         </div>
         
-        <div class="controls">
-            <div class="control-group">
-                <label for="inhaleInput">Inhalación (s):</label>
-                <input type="number" id="inhaleInput" value="2.63" min="0.1" step="0.1">
-            </div>
-            
-            <div class="control-group">
-                <label for="exhaleInput">Exhalación (s):</label>
-                <input type="number" id="exhaleInput" value="2.37" min="0.1" step="0.1">
-            </div>
-            
-            <div class="control-buttons">
-                <button id="startBtn">Iniciar</button>
-                <button id="stopBtn">Detener</button>
-                <button id="pauseBtn">Pausar</button>
-                <button id="resumeBtn">Reanudar</button>
-            </div>
-        </div>
-        
         <div class="biometric-controls">
-            <h3>Configuración Biométrica Automática</h3>
+            <h3>Configuración Clínica Automática</h3>
             <div class="biometric-grid">
                 <div class="biometric-group">
-                    <label for="rhSelect">Ritmo Cardíaco:</label>
-                    <select id="rhSelect">
-                        <option value="1">Bajo</option>
-                        <option value="2" selected>Normal</option>
-                        <option value="3">Alto</option>
+                    <label for="rmssdSelect">RMSSD (Variabilidad Cardíaca):</label>
+                    <select id="rmssdSelect">
+                        <option value="1">Crítico (&lt; 30 ms)</option>
+                        <option value="2" selected>Tolerable (30-50 ms)</option>
+                        <option value="3">Normal (&gt; 50 ms)</option>
                     </select>
                 </div>
                 
                 <div class="biometric-group">
-                    <label for="ibiSelect">Intervalo Entre Latidos:</label>
-                    <select id="ibiSelect">
-                        <option value="1">Corto</option>
-                        <option value="2" selected>Normal</option>
-                        <option value="3">Largo</option>
-                    </select>
-                </div>
-                
-                <div class="biometric-group">
-                    <label for="hrvSelect">Variabilidad (HRV):</label>
-                    <select id="hrvSelect">
-                        <option value="1">Baja</option>
-                        <option value="2" selected>Normal</option>
-                        <option value="3">Alta</option>
-                    </select>
-                </div>
-                
-                <div class="biometric-group">
-                    <label for="stressSelect">Nivel de Estrés:</label>
+                    <label for="stressSelect">Nivel de Estrés Percibido:</label>
                     <select id="stressSelect">
-                        <option value="1">Muy Bajo</option>
+                        <option value="1">Máxima Relajación</option>
                         <option value="2">Bajo</option>
-                        <option value="3" selected>Normal</option>
+                        <option value="3" selected>Neutro</option>
                         <option value="4">Alto</option>
                         <option value="5">Muy Alto</option>
                     </select>
