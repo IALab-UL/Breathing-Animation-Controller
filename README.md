@@ -9,9 +9,9 @@
 
 </div>
 
-Un sistema de control de respiración automático basado en algoritmos clínicos para aplicaciones de bienestar mental. Utiliza animaciones [Lottie](https://github.com/airbnb/lottie-web) y configura patrones respiratorios según indicadores biométricos.
+Un sistema de control de respiración automático basado en algoritmos clínicos para aplicaciones de bienestar mental. Utiliza animaciones [Lottie](https://github.com/airbnb/lottie-web) y configura patrones respiratorios según indicadores biométricos específicos por grupo etario.
 
-✨ **Sistema biométrico automático con 15 patrones clínicos específicos basados en RMSSD y nivel de estrés.**
+✨ **Sistema biométrico automático con umbrales clínicos específicos basados en grupo etario, RMSSD real (ms) y nivel de estrés.**
 
 ## 📚 Tabla de contenido
 
@@ -26,14 +26,15 @@ Un sistema de control de respiración automático basado en algoritmos clínicos
 
 ## 🎯 Descripción
 
-Este controlador carga un JSON de Lottie con dos capas (`Breathe in` y `Breathe out`) y alterna automáticamente entre las fases de inhalación y exhalación. Los patrones respiratorios se configuran automáticamente mediante un algoritmo clínico basado en RMSSD (variabilidad cardíaca) y nivel de estrés percibido.
+Este controlador carga un JSON de Lottie con dos capas (`Breathe in` y `Breathe out`) y alterna automáticamente entre las fases de inhalación y exhalación. Los patrones respiratorios se configuran automáticamente mediante un algoritmo clínico basado en umbrales de RMSSD específicos por grupo etario y nivel de estrés percibido.
 
 ### ✨ Características principales
 
 - 🔄 **Inicio automático** al cargar la página
-- 🧬 **Sistema biométrico inteligente** con 15 patrones clínicos específicos
+- 👥 **Umbrales por grupo etario** (Niños 6-12, Adultos 18-40, Mayores >60)
+- 🧬 **Sistema biométrico inteligente** con valores reales de RMSSD en milisegundos
 - 🎯 **Algoritmo clínico validado** basado en literatura científica
-- 📊 **Configuración automática** basada en 2 indicadores (RMSSD y Estrés)
+- 📊 **Configuración automática** basada en 3 indicadores (Grupo Etario, RMSSD, Estrés)
 - 🎨 **Codificación visual por colores** según urgencia clínica
 - 🧩 **API simple** y completamente automática
 
@@ -77,13 +78,19 @@ En `index.html` se inicializa el controlador automáticamente al cargar la pági
   <h3>Configuración Clínica Automática</h3>
   <div class="biometric-grid">
     <div class="biometric-group">
-      <label for="rmssdSelect">RMSSD (Variabilidad Cardíaca):</label>
-      <select id="rmssdSelect">
-        <option value="1">Crítico (&lt; 30 ms)</option>
-        <option value="2" selected>Tolerable (30-50 ms)</option>
-        <option value="3">Normal (&gt; 50 ms)</option>
+      <label for="ageGroupSelect">Grupo Etario:</label>
+      <select id="ageGroupSelect">
+        <option value="child">Niños (6-12 años)</option>
+        <option value="young_adult" selected>Adultos Jóvenes (18-40 años)</option>
+        <option value="older_adult">Adultos Mayores (>60 años)</option>
       </select>
     </div>
+    
+    <div class="biometric-group">
+      <label for="rmssdInput">RMSSD (ms):</label>
+      <input type="number" id="rmssdInput" min="5" max="100" step="1" value="35" placeholder="RMSSD en ms">
+    </div>
+    
     <div class="biometric-group">
       <label for="stressSelect">Nivel de Estrés Percibido:</label>
       <select id="stressSelect">
@@ -105,7 +112,7 @@ En `index.html` se inicializa el controlador automáticamente al cargar la pági
 <script src="interface.js"></script>
 ```
 
-🎉 **¡La animación arranca automáticamente y se configura según los selectores biométricos!**
+🎉 **¡La animación arranca automáticamente y se configura según los controles biométricos (grupo etario, RMSSD en ms, y nivel de estrés)!**
 
 ## ⚙️ Configuración
 
@@ -151,71 +158,79 @@ const controller = new BreathingController({
 |--------|------------|-------------|---------|
 | `setInhaleDuration(seconds)` | `number` | 📥 Asigna duración de inhalación | `controller.setInhaleDuration(4.0)` |
 | `setExhaleDuration(seconds)` | `number` | 📤 Asigna duración de exhalación | `controller.setExhaleDuration(6.0)` |
-| `updateBiometrics(rmssd, stress)` | `number, number` | 🧬 Actualiza indicadores biométricos y aplica configuración automática | `controller.updateBiometrics(2, 4)` |
-| `getCurrentConfiguration()` | - | 📊 Obtiene la configuración biométrica actual | `controller.getCurrentConfiguration()` |
-| `getAllConfigurations()` | - | 📋 Obtiene todas las 15 configuraciones posibles | `controller.getAllConfigurations()` |
+| `updateBiometrics(ageGroup, rmssdValue, stress)` | `string, number, number` | 🧬 Actualiza indicadores biométricos y aplica configuración automática | `controller.updateBiometrics('young_adult', 35, 4)` |
+| `obtenerConfiguracionActual()` | - | 📊 Obtiene la configuración biométrica actual | `controller.obtenerConfiguracionActual()` |
 
 ## 🧬 Sistema Biométrico Clínico
 
 ### 📊 Indicadores Biométricos
 
-El sistema utiliza 2 indicadores para generar automáticamente **15 patrones clínicos específicos**:
+El sistema utiliza 3 indicadores para generar automáticamente patrones clínicos específicos:
 
-| Indicador | Niveles | Descripción |
+| Indicador | Valores | Descripción |
 |-----------|---------|-------------|
-| **RMSSD** (Variabilidad Cardíaca) | 1-3 | Crítico (<30ms), Tolerable (30-50ms), Normal (>50ms) |
-| **Estrés** (Percepción Subjetiva) | 1-5 | Máxima Relajación, Bajo, Neutro, Alto, Muy Alto |
+| **Grupo Etario** | `child`, `young_adult`, `older_adult` | Niños (6-12 años), Adultos Jóvenes (18-40 años), Adultos Mayores (>60 años) |
+| **RMSSD** | 5-100 ms | Valor real de variabilidad cardíaca en milisegundos |
+| **Estrés** | 1-5 | Máxima Relajación, Bajo, Neutro, Alto, Muy Alto |
+
+### 🎯 Umbrales RMSSD por Grupo Etario
+
+| Grupo | Crítico | Tolerable | Normal |
+|-------|---------|-----------|--------|
+| **Niños (6-12 años)** | < 25 ms | 25-40 ms | > 40 ms |
+| **Adultos Jóvenes (18-40 años)** | < 30 ms | 30-50 ms | > 50 ms |
+| **Adultos Mayores (>60 años)** | < 15 ms | 15-30 ms | > 30 ms |
 
 ### 🎯 Algoritmo Clínico
 
 El algoritmo implementa 5 tipos de acciones basadas en protocolos clínicos:
 
-- **🔴 Activar protocolo**: El avatar inicia respiración guiada (4-6 segundos) por 3 minutos
-- **🟠 Continuar protocolo**: Se repite el bloque de respiración porque la recuperación aún no es completa
-- **🟣 Esperar y reevaluar**: Se vuelve a revisar en 3 minutos antes de intervenir
-- **🔵 Monitorear**: No se activa protocolo, pero el sistema puede aumentar frecuencia de chequeo
-- **🟢 No activar**: No se hace nada en esta revisión
+- **🔴 Activar protocolo**: Respiración guiada con 4s inhalación / 6s exhalación
+- **🟠 Continuar protocolo**: Repetir protocolo hasta recuperación vagal
+- **🟣 Esperar y reevaluar**: Monitorear evolución antes de intervenir
+- **🔵 Monitorear**: Aumentar frecuencia de chequeos biométricos
+- **🟢 No activar**: Estado óptimo sin necesidad de intervención
 
 ### 🛡️ Límites de Seguridad
 
-- **Cuando se activa el protocolo**: Duración entre 4.0s y 6.0s para ambas fases
-- **Cuando no se activa**: Duración fija de 4.0s para ambas fases
+- **Protocolo activado**: 4.0s inhalación / 6.0s exhalación
+- **Protocolo no activado**: 4.0s inhalación / 4.0s exhalación
 - **Precisión**: Valores redondeados a 1 decimal
 
 ### 💡 Ejemplos de Patrones Clínicos
 
-| RMSSD | Estrés | Acción | Duración | Descripción |
-|-------|--------|--------|----------|-------------|
-| Crítico | Muy Alto | 🔴 Activar | 4.0s / 6.0s | Crisis simpática - Activación inmediata |
-| Tolerable | Alto | 🔴 Activar | 4.5s / 5.0s | Prevenir colapso - Proteger reserva |
-| Normal | Muy Alto | 🟣 Esperar | 4.0s / 4.0s | Perfil resiliente - Reevaluar en 3 min |
-| Crítico | Bajo | 🟠 Continuar | 4.5s / 5.0s | Recuperación incompleta - Repetir bloque |
-| Normal | Neutro | 🟢 No activar | 4.0s / 4.0s | Estado equilibrado - Sin intervención |
+| Grupo Etario | RMSSD | Estrés | Acción | Duración | Descripción |
+|--------------|-------|--------|--------|----------|-------------|
+| Adultos Jóvenes | 20ms (crítico) | Muy Alto | 🔴 Activar | 4.0s / 6.0s | Crisis autonómica |
+| Niños | 35ms (tolerable) | Alto | 🔴 Activar | 4.0s / 6.0s | Protección parasimpática |
+| Adultos Mayores | 35ms (normal) | Muy Alto | 🟣 Esperar | 4.0s / 4.0s | Perfil resiliente |
+| Adultos Jóvenes | 25ms (crítico) | Bajo | 🟠 Continuar | 4.0s / 6.0s | Recuperación incompleta |
+| Niños | 50ms (normal) | Neutro | 🟢 No activar | 4.0s / 4.0s | Homeostasis óptima |
 
 ### 🎨 Codificación Visual
 
 El sistema muestra cada configuración con colores específicos según la urgencia:
 
-- **🔴 Rojo**: Activar protocolo (urgente)
-- **🟠 Naranja**: Continuar protocolo (importante)  
-- **🟣 Púrpura**: Esperar y reevaluar (precaución)
-- **🔵 Azul**: Monitorear (atención)
-- **🟢 Verde**: No activar (normal)
+- **🔴 Rojo**: Activar protocolo (crisis autonómica)
+- **🟠 Naranja**: Continuar protocolo (recuperación incompleta)  
+- **🟣 Púrpura**: Esperar y reevaluar (perfil resiliente)
+- **🔵 Azul**: Monitorear (inconsistencia biométrica)
+- **🟢 Verde**: No activar (estado óptimo)
 
-### 🎯 Función auxiliar (interface.js)
+### 🎯 Funciones de interfaz (interface.js)
 
 ```js
 // 🎲 Genera configuración aleatoria para explorar patrones
-generateRandomBiometrics()
+generarBiometricosAleatorios()
 
 // 🔄 Aplica configuración biométrica automáticamente
-applyBiometricConfiguration()
+aplicarConfiguracionBiometrica()
 ```
 
 **Uso:**
-- Los selectores se actualizan **automáticamente** al cambiar cualquier valor
-- El botón "Configuración Aleatoria" permite explorar las 15 combinaciones
-- El display muestra la configuración actual con codificación por colores
+- Los controles se actualizan **automáticamente** al cambiar cualquier valor
+- El botón "Configuración Aleatoria" permite explorar diferentes combinaciones
+- El display muestra la configuración actual con codificación por colores y descripción clínica específica
 
 ## 📄 Licencia
 

@@ -1,13 +1,14 @@
 // Función para aplicar configuración biométrica
-function applyBiometricConfiguration() {
+function aplicarConfiguracionBiometrica() {
     if (!window.breathingController) return;
     
-    const rmssd = parseInt(document.getElementById('rmssdSelect').value);
-    const stress = parseInt(document.getElementById('stressSelect').value);
+    const grupoEtario = document.getElementById('ageGroupSelect').value;
+    const valorRMSSD = parseInt(document.getElementById('rmssdInput').value);
+    const estres = parseInt(document.getElementById('stressSelect').value);
     
-    const success = window.breathingController.updateBiometrics(rmssd, stress);
+    const exito = window.breathingController.updateBiometrics(grupoEtario, valorRMSSD, estres);
     
-    if (success) {
+    if (exito) {
         console.log('Configuración clínica aplicada exitosamente');
     } else {
         console.error('Error al aplicar configuración clínica');
@@ -15,33 +16,37 @@ function applyBiometricConfiguration() {
 }
 
 // Función para generar configuración aleatoria
-function generateRandomBiometrics() {
-    const rmssd = Math.floor(Math.random() * 3) + 1;  // 1-3
-    const stress = Math.floor(Math.random() * 5) + 1; // 1-5
+function generarBiometricosAleatorios() {
+    const gruposEtarios = ['child', 'young_adult', 'older_adult'];
+    const grupoEtario = gruposEtarios[Math.floor(Math.random() * gruposEtarios.length)];
+    const valorRMSSD = Math.floor(Math.random() * 70) + 10; // 10-80 ms
+    const estres = Math.floor(Math.random() * 5) + 1; // 1-5
     
-    // Actualizar selects
-    document.getElementById('rmssdSelect').value = rmssd;
-    document.getElementById('stressSelect').value = stress;
+    // Actualizar controles
+    document.getElementById('ageGroupSelect').value = grupoEtario;
+    document.getElementById('rmssdInput').value = valorRMSSD;
+    document.getElementById('stressSelect').value = estres;
     
     // Aplicar configuración
-    applyBiometricConfiguration();
+    aplicarConfiguracionBiometrica();
 }
 
 // Configurar controles biométricos
 document.addEventListener('DOMContentLoaded', () => {
-    const randomBiometricBtn = document.getElementById('randomBiometricBtn');
+    const botonAleatorio = document.getElementById('randomBiometricBtn');
     
     // Controles biométricos
-    randomBiometricBtn?.addEventListener('click', generateRandomBiometrics);
+    botonAleatorio?.addEventListener('click', generarBiometricosAleatorios);
     
-    // Listeners para cambios automáticos en los selects
-    const biometricSelects = ['rmssdSelect', 'stressSelect'];
-    biometricSelects.forEach(selectId => {
-        const select = document.getElementById(selectId);
-        if (select) {
-            select.addEventListener('change', () => {
-                // Aplicar automáticamente cuando cambie cualquier selector
-                setTimeout(applyBiometricConfiguration, 100);
+    // Listeners para cambios automáticos en los controles
+    const controlesBiometricos = ['ageGroupSelect', 'rmssdInput', 'stressSelect'];
+    controlesBiometricos.forEach(controlId => {
+        const control = document.getElementById(controlId);
+        if (control) {
+            const tipoEvento = control.tagName === 'INPUT' ? 'input' : 'change';
+            control.addEventListener(tipoEvento, () => {
+                // Aplicar automáticamente cuando cambie cualquier control
+                setTimeout(aplicarConfiguracionBiometrica, 100);
             });
         }
     });
@@ -49,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Aplicar configuración inicial después de que se cargue el controlador
     setTimeout(() => {
         if (window.breathingController) {
-            applyBiometricConfiguration();
+            aplicarConfiguracionBiometrica();
         }
     }, 1000);
 });
