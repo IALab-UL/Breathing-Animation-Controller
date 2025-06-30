@@ -1,57 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo de Control de Respiración</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.10.2/lottie.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <h1>Control de Respiración</h1>
-        <div class="animation-container">
-            <div id="lottie"></div>
-        </div>
-        
-        <div class="biometric-controls">
-            <h3>Configuración Clínica Automática</h3>
-            <div class="biometric-grid">
-                <div class="biometric-group">
-                    <label for="ageGroupSelect">Grupo Etario:</label>
-                    <select id="ageGroupSelect">
-                        <option value="child">Niños (6-12 años)</option>
-                        <option value="young_adult" selected>Adultos Jóvenes (18-40 años)</option>
-                        <option value="older_adult">Adultos Mayores (>60 años)</option>
-                    </select>
-                </div>
-                
-                <div class="biometric-group">
-                    <label for="rmssdInput">RMSSD (ms):</label>
-                    <input type="number" id="rmssdInput" min="5" max="100" step="1" value="35" placeholder="RMSSD en ms">
-                </div>
-                
-                <div class="biometric-group">
-                    <label for="stressSelect">Nivel de Estrés Percibido:</label>
-                    <select id="stressSelect">
-                        <option value="1">Máxima Relajación</option>
-                        <option value="2">Bajo</option>
-                        <option value="3" selected>Neutro</option>
-                        <option value="4">Alto</option>
-                        <option value="5">Muy Alto</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="biometric-actions">
-                <button id="randomBiometricBtn">Configuración Aleatoria</button>
-            </div>
-            
-            <div id="biometricDisplay" class="biometric-display"></div>
-        </div>
-    </div>
-    
-    <script src="script.js"></script>
-    <script src="interface.js"></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
